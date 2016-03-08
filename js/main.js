@@ -1,56 +1,29 @@
+let GameStateManager = require('./game_screens.js').GameStateManager;
+let TitleScreen = require('./game_screens.js').TitleScreen;
+
 class Game {
   constructor() {
     this.inputState = {
       buttons: {
         LEFT: false,
         RIGHT: false,
+        ESC: false,
       }
     };
-    this.gameStates = Object.freeze({
-      TITLE_SCREEN: 0,
-      PLAYING_GAME: 1,
-    });
-    this.currentState = this.gameStates.TITLE_SCREEN;
-  }
-  handleInput() {
-    switch (this.currentState) {
-      case this.gameStates.TITLE_SCREEN:
-        if (this.inputState.buttons.LEFT) {
-          this.inputState.buttons.LEFT = false;
-          console.log("Switching to PLAYING_GAME");
-          this.currentState = this.gameStates.PLAYING_GAME;
-        }
-        break;
-      case this.gameStates.PLAYING_GAME:
-        // this.renderGame();
-        break;
-      default:
-    }
-  }
-  renderGame() {
-    console.log("Rendering game screen!");
-  }
-  renderTitle() {
-    console.log("Rendering title screen!");
+    this.stateManager = new GameStateManager();
   }
   loop() {
-    this.handleInput();
-    // update / stage
-    // render
-    switch (this.currentState) {
-      case this.gameStates.TITLE_SCREEN:
-        this.renderTitle();
-        break;
-      case this.gameStates.PLAYING_GAME:
-        this.renderGame();
-        break;
-      default:
+    let currentState = this.stateManager.peek();
+    if (currentState != null) {
+      currentState.input();
+      currentState.update();
+      currentState.render();
     }
     requestAnimationFrame(() => this.loop());
   }
   start() {
-    console.log("Game start");
-    // whatever setup
+    console.log("Start Game");
+    this.stateManager.push(new TitleScreen(this.inputState, this.stateManager));
     this.loop()
   }
 }
@@ -58,8 +31,36 @@ class Game {
 let game = new Game();
 game.start();
 
+let keyConfig = {
+  65: "LEFT",
+  83: "DOWN",
+  68: "RIGHT",
+  87: "UP",
+  37: "CAMLEFT",
+  39: "CAMRIGHT",
+  32: "SPACE",
+  90: "ZOOM",
+  27: "ESC",
+};
+
 window.addEventListener('click', function(e) {
   let point = new PIXI.Point(e.clientX, e.clientY);
   console.log("point!", point)
   game.inputState.buttons.LEFT = true;
+});
+
+window.addEventListener('keyup', function(e) {
+  let key = keyConfig[e.keyCode];
+
+  if (key != undefined) {
+    game.inputState.buttons[key] = false;
+  }
+});
+
+window.addEventListener('keydown', function(e) {
+  let key = keyConfig[e.keyCode];
+
+  if (key != undefined) {
+    game.inputState.buttons[key] = true;
+  }
 });
